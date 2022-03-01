@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-pspace/.idea
+.idea
 pspace/pspace/settings.py
 # C extensions
 *.so
