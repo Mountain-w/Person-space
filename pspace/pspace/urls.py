@@ -16,12 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
-from account.api import views
+from account.api.views import UserViewSet, AccountViewSet
+from dynamic.api.views import DynamicViewset
 
 router = routers.DefaultRouter()
-router.register(r'api/users', views.UserViewSet)
-router.register(r'api/accounts', views.AccountViewSet, basename="accounts")
-
+router.register(r'api/users', UserViewSet)
+router.register(r'api/accounts', AccountViewSet, basename="accounts")
+router.register(r'api/dynamics', DynamicViewset, basename="dynamics")
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
