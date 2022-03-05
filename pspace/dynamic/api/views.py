@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from dynamic.api.serialzers import DynamicSerializer, DynamicCreateSerializer
 from dynamic.models import Dynamic
-
+from newsfeeds.services import NewsFeedService
 
 class DynamicViewset(viewsets.GenericViewSet,
               viewsets.mixins.CreateModelMixin,
@@ -49,4 +49,5 @@ class DynamicViewset(viewsets.GenericViewSet,
                 "errors": serializer.errors,
             }, status=400)
         dynamic = serializer.save()
+        NewsFeedService.fanout_to_followers(dynamic)
         return Response(DynamicSerializer(dynamic).data, status=201)

@@ -11,7 +11,6 @@ FOLLOWINGS_URL = '/api/friendships/{}/followings/'
 
 class FriendshipApiTests(TestCase):
     def setUp(self):
-        self.anonymous_client = APIClient()
         self.ruize = self.create_user('ruize')
         self.ruize_client = APIClient()
         self.ruize_client.force_authenticate(self.ruize)
