@@ -2,6 +2,7 @@ from django.test import TestCase as DjangoTestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from dynamic.models import Dynamic
+from comments.models import Comment
 
 
 class TestCase(DjangoTestCase):
@@ -25,3 +26,8 @@ class TestCase(DjangoTestCase):
         if content is None:
             content = 'default dynamic content'
         return Dynamic.objects.create(user=user, content=content)
+
+    def create_comment(self, user, dynamic, content=None):
+        if not content:
+            content = "very good"
+        return Comment.objects.create(user=user, dynamic=dynamic, content=content)
