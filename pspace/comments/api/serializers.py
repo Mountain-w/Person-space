@@ -33,3 +33,13 @@ class CommentSerializerForCreate(serializers.ModelSerializer):
             dynamic_id=validated_data['dynamic_id'],
             content=validated_data['content']
         )
+
+class CommentSerializerForUpdate(serializers.ModelSerializer):
+    content = serializers.CharField(max_length=140)
+    class Meta:
+        model = Comment
+        fields = ('content',)
+    def update(self, instance, validated_data):
+        instance.content = validated_data['content']
+        instance.save()
+        return instance

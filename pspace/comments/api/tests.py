@@ -1,7 +1,7 @@
 from testing.testcases import TestCase
 from rest_framework.test import APIClient
-
-
+from django.utils import timezone
+from comments.models import Comment
 
 COMMENT_URL = '/api/comments/'
 
@@ -49,3 +49,50 @@ class CommentApiTests(TestCase):
         self.assertEqual(response.data['user']['id'], self.ruize.id)
         self.assertEqual(response.data['dynamic_id'], self.dynamic.id)
         self.assertEqual(response.data['content'], 'oh yeah')
+
+    def test_destroy(self):
+        comment = self.create_comment(self.ruize, self.dynamic)
+        url = f"{COMMENT_URL}{comment.id}/"
+        # 匿名不可删除
+        response = self.anonymous_client.delete(url)
+        self.assertEqual(response.status_code, 403)
+        # 非本人不能删除
+        response = self.laopo_client.delete(url)
+        self.assertEqual(response.status_code, 403)
+        # 本人可以删除
+        count = Comment.objects.count()
+        response = self.ruize_client.delete(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(count-1, Comment.objects.count())
+
+    def test_update(self):
+        comment = self.create_comment(self.ruize, self.dynamic)
+        another_dynamic = self.create_dynamic(self.laopo)
+        url = f"{COMMENT_URL}{comment.id}/"
+        # 使用 put 的情况下
+        # 匿名不可以更新
+        response = self.anonymous_client.put(url, {'content': 'new'})
+        self.assertEqual(response.status_code, 403)
+        # 非本人不可更新
+        response = self.laopo_client.put(url, {'content':'new'})
+        self.assertEqual(response.status_code, 403)
+        comment.refresh_from_db()
+        self.assertNotEqual(comment.content, 'new')
+        # 不能更新conten以外的东西
+        before_updated = comment.updated_at
+        before_created = comment.created_at
+        now = timezone.now()
+        response = self.ruize_client.put(url, {
+            'content':'new',
+            'user_id':self.laopo.id,
+            'dynamic_id':another_dynamic.id,
+            'created_at': now,
+        })
+        self.assertEqual(response.status_code, 200)
+        comment.refresh_from_db()
+        self.assertEqual(comment.content, 'new')
+        self.assertEqual(comment.user, self.ruize)
+        self.assertEqual(comment.dynamic, self.dynamic)
+        self.assertEqual(comment.created_at, before_created)
+        self.assertNotEqual(comment.created_at, now)
+        self.assertNotEqual(comment.updated_at, before_updated)
