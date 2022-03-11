@@ -7,6 +7,7 @@ CommentSerializer,
 CommentSerializerForCreate,
 CommentSerializerForUpdate,
 )
+from utils.decorators import required_params
 from comments.api.permissions import IsObjectOwner
 
 class CommentViewSet(viewsets.GenericViewSet):
@@ -16,6 +17,7 @@ class CommentViewSet(viewsets.GenericViewSet):
     """
     serializer_class = CommentSerializerForCreate
     queryset = Comment.objects.all()
+    filterset_fields = ('dynamic_id',)
 
     def get_permissions(self):
         if self.action == 'create':
@@ -23,6 +25,23 @@ class CommentViewSet(viewsets.GenericViewSet):
         if self.action in ['destroy', 'update']:
             return [IsAuthenticated(), IsObjectOwner()]
         return (AllowAny(),)
+
+    @required_params(params=['dynamic_id'])
+    def list(self, request, *args, **kwargs):
+        # if 'dynamic_id' not in request.query_params:
+        #     return Response({
+        #         'message': 'miss dynamic_id in request',
+        #         'success':False
+        #     }, status=status.HTTP_400_BAD_REQUEST)
+        query_set = self.get_queryset()
+        comments_ = self.filter_queryset(query_set).order_by('created_at')
+        serializer = CommentSerializer(comments_, many=True)
+        return Response(
+            {
+                'comments': serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
 
     def create(self, request, *args, **kwargs):
         data = {

@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from dynamic.api.serialzers import DynamicSerializer, DynamicCreateSerializer
+from dynamic.api.serializers import DynamicSerializer, DynamicWithComment, DynamicCreateSerializer
 from dynamic.models import Dynamic
 from newsfeeds.services import NewsFeedService
 
@@ -12,9 +12,15 @@ class DynamicViewset(viewsets.GenericViewSet,
     serializer_class = DynamicSerializer
 
     def get_permissions(self):
-        if self.action == 'list':
+        if self.action in ('list', 'retrieve'):
             return (AllowAny(),)
         return (IsAuthenticated(),)
+
+    def retrieve(self, request, *args, **kwargs):
+        dynamic = self.get_object()
+        return Response({
+            'dynamics':DynamicWithComment(dynamic).data
+        }, status=200)
 
     def list(self, request, *args, **kwargs):
         """

@@ -1,6 +1,7 @@
 from account.api.serializers import UserSerializer
 from rest_framework import serializers
 from dynamic.models import Dynamic
+from comments.api.serializers import CommentSerializer
 
 
 class DynamicSerializer(serializers.ModelSerializer):
@@ -23,3 +24,11 @@ class DynamicCreateSerializer(serializers.ModelSerializer):
         content = validated_data['content']
         dynamic = Dynamic.objects.create(user=user, content=content)
         return dynamic
+
+class DynamicWithComment(serializers.ModelSerializer):
+    user = UserSerializer()
+    comments = CommentSerializer(source='comment_set', many=True)
+
+    class Meta:
+        model = Dynamic
+        fields = ('id', 'user', 'content',  'comments', 'created_at')

@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from newsfeeds.models import NewsFeed
-from dynamic.api.serialzers import DynamicSerializer
+from dynamic.api.serializers import DynamicSerializer, DynamicWithComment
 
 
 class NewsFeedSerializer(serializers.ModelSerializer):
-    dynamic = DynamicSerializer()
+    dynamic = DynamicWithComment()
 
     class Meta:
         model = NewsFeed
