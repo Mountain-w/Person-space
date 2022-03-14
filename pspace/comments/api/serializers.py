@@ -3,15 +3,22 @@ from comments.models import Comment
 from account.api.serializers import UserSerializer
 from rest_framework.exceptions import ValidationError
 from dynamic.models import Dynamic
+from likes.services import LikeService
 
 
 class CommentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-
+    likes_count = serializers.SerializerMethodField()
+    has_liked = serializers.SerializerMethodField()
     class Meta:
         model = Comment
-        fields = ('id', 'dynamic_id', 'user', 'content', 'created_at')
+        fields = ('id', 'dynamic_id', 'user', 'content', 'created_at',
+                  'likes_count', 'has_liked')
 
+    def get_likes_count(self, obj):
+        return obj.like_set.count()
+    def get_has_liked(self, obj):
+        return LikeService.has_liked(self.context['request'].user, obj)
 class CommentSerializerForCreate(serializers.ModelSerializer):
     dynamic_id = serializers.IntegerField()
     user_id = serializers.IntegerField()
@@ -43,3 +50,5 @@ class CommentSerializerForUpdate(serializers.ModelSerializer):
         instance.content = validated_data['content']
         instance.save()
         return instance
+
+

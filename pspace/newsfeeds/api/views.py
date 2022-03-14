@@ -17,7 +17,7 @@ class NewsFeedViewSet(viewsets.GenericViewSet):
         return NewsFeed.objects.filter(user=self.request.user)
 
     def list(self, request):
-        serializer = NewsFeedSerializer(self.get_queryset(), many=True)
+        serializer = NewsFeedSerializer(self.get_queryset(), many=True, context={'request':request})
         return Response({
             'newsfeeds':serializer.data,
         }, status=status.HTTP_200_OK)

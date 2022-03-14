@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from dynamic.api.serializers import DynamicSerializer, DynamicWithComment, DynamicCreateSerializer
+from dynamic.api.serializers import DynamicSerializer, DynamicSerializerForDetail, DynamicCreateSerializer
 from dynamic.models import Dynamic
 from newsfeeds.services import NewsFeedService
 
@@ -18,9 +18,9 @@ class DynamicViewset(viewsets.GenericViewSet,
 
     def retrieve(self, request, *args, **kwargs):
         dynamic = self.get_object()
-        return Response({
-            'dynamics':DynamicWithComment(dynamic).data
-        }, status=200)
+        return Response(
+            DynamicSerializerForDetail(dynamic, context={'request':request}).data
+        , status=200)
 
     def list(self, request, *args, **kwargs):
         """
@@ -37,7 +37,7 @@ class DynamicViewset(viewsets.GenericViewSet,
         dynamics = Dynamic.objects.filter(
             user_id=request.query_params['user_id']
         ).order_by('-created_at')
-        serializer = DynamicSerializer(dynamics, many=True)
+        serializer = DynamicSerializer(dynamics, many=True, context={'request':request})
         return Response({"Dynamics": serializer.data})
 
     def create(self, request, *args, **kwargs):
@@ -56,4 +56,4 @@ class DynamicViewset(viewsets.GenericViewSet,
             }, status=400)
         dynamic = serializer.save()
         NewsFeedService.fanout_to_followers(dynamic)
-        return Response(DynamicSerializer(dynamic).data, status=201)
+        return Response(DynamicSerializer(dynamic, context={'request':request}).data, status=201)

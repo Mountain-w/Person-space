@@ -4,7 +4,9 @@ from django.utils import timezone
 from comments.models import Comment
 
 COMMENT_URL = '/api/comments/'
-
+DYNAMIC_LIST_API = '/api/dynamics/'
+DYNAMIC_DETAIL_API = '/api/dynamics/{}/'
+NEWSFEED_LIST_API = '/api/newsfeeds/'
 
 class CommentApiTests(TestCase):
     def setUp(self):
@@ -131,3 +133,24 @@ class CommentApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['comments']), 3)
+
+    def test_comment_count(self):
+        dynamic = self.create_dynamic(self.ruize)
+        url = DYNAMIC_DETAIL_API.format(dynamic.id)
+        response = self.laopo_client.get(url)
+        self.assertEqual(response.status_code, 200)
+        # print(response.data)
+        self.assertEqual(response.data['comments_count'], 0)
+
+        self.create_comment(self.ruize, dynamic)
+        response = self.laopo_client.get(DYNAMIC_LIST_API, {'user_id':self.ruize.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['Dynamics'][0]['comments_count'], 1)
+
+        self.create_comment(self.laopo, dynamic)
+        self.create_newsfeed(self.laopo, dynamic)
+
+        response = self.laopo_client.get(NEWSFEED_LIST_API)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['newsfeeds'][0]['dynamic']['comments_count'], 2)
+

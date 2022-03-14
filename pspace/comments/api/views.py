@@ -35,7 +35,7 @@ class CommentViewSet(viewsets.GenericViewSet):
         #     }, status=status.HTTP_400_BAD_REQUEST)
         query_set = self.get_queryset()
         comments_ = self.filter_queryset(query_set).order_by('created_at')
-        serializer = CommentSerializer(comments_, many=True)
+        serializer = CommentSerializer(comments_, many=True, context={'request':request})
         return Response(
             {
                 'comments': serializer.data
@@ -57,7 +57,7 @@ class CommentViewSet(viewsets.GenericViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         comment = serializer.save()
         return Response(
-            CommentSerializer(comment).data,
+            CommentSerializer(comment, context={'request':request}).data,
             status=status.HTTP_201_CREATED
         )
 
@@ -75,7 +75,7 @@ class CommentViewSet(viewsets.GenericViewSet):
         # save 方法会触发 serializer 里的 update 方法，点进 save 的具体实现里可以看到
         # save 是根据 instance 参数有没有传来决定是触发 create 还是 update
         comment = serializer.save()
-        return Response(CommentSerializer(comment).data, status=status.HTTP_200_OK)
+        return Response(CommentSerializer(comment, context={'request':request}).data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         comment = self.get_object()
