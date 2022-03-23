@@ -11,13 +11,9 @@ FOLLOWINGS_URL = '/api/friendships/{}/followings/'
 
 class FriendshipApiTests(TestCase):
     def setUp(self):
-        self.ruize = self.create_user('ruize')
-        self.ruize_client = APIClient()
-        self.ruize_client.force_authenticate(self.ruize)
+        self.ruize, self.ruize_client = self.create_user_and_client('ruize')
 
-        self.laopo = self.create_user('laopo')
-        self.laopo_client = APIClient()
-        self.laopo_client.force_authenticate(self.laopo)
+        self.laopo, self.laopo_client = self.create_user_and_client('laopo')
 
         for i in range(2):
             follower = self.create_user('laopo_follower{}'.format(i))
@@ -50,79 +46,79 @@ class FriendshipApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Friendship.objects.count(), count + 1)
 
-        def test_unfollow(self):
-            url = UNFOLLOW_URL.format(self.ruize.id)
+    def test_unfollow(self):
+        url = UNFOLLOW_URL.format(self.ruize.id)
 
-            # 需要登录才能 unfollow 别人
-            response = self.anonymous_client.post(url)
-            self.assertEqual(response.status_code, 403)
-            # 不能用 get 来 unfollow 别人
-            response = self.laopo_client.get(url)
-            self.assertEqual(response.status_code, 405)
-            # 不能用 unfollow 自己
-            response = self.ruize_client.post(url)
-            self.assertEqual(response.status_code, 400)
-            # unfollow 成功
-            Friendship.objects.create(from_user=self.laopo, to_user=self.ruize)
-            count = Friendship.objects.count()
-            response = self.laopo_client.post(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.data['deleted'], 1)
-            self.assertEqual(Friendship.objects.count(), count - 1)
-            # 未 follow 的情况下 unfollow 静默处理
-            count = Friendship.objects.count()
-            response = self.laopo_client.post(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.data['deleted'], 0)
-            self.assertEqual(Friendship.objects.count(), count)
+        # 需要登录才能 unfollow 别人
+        response = self.anonymous_client.post(url)
+        self.assertEqual(response.status_code, 403)
+        # 不能用 get 来 unfollow 别人
+        response = self.laopo_client.get(url)
+        self.assertEqual(response.status_code, 405)
+        # 不能用 unfollow 自己
+        response = self.ruize_client.post(url)
+        self.assertEqual(response.status_code, 400)
+        # unfollow 成功
+        Friendship.objects.create(from_user=self.laopo, to_user=self.ruize)
+        count = Friendship.objects.count()
+        response = self.laopo_client.post(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['deleted'], 1)
+        self.assertEqual(Friendship.objects.count(), count - 1)
+        # 未 follow 的情况下 unfollow 静默处理
+        count = Friendship.objects.count()
+        response = self.laopo_client.post(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['deleted'], 0)
+        self.assertEqual(Friendship.objects.count(), count)
 
-        def test_followings(self):
-            url = FOLLOWINGS_URL.format(self.laopo.id)
-            # post is not allowed
-            response = self.anonymous_client.post(url)
-            self.assertEqual(response.status_code, 405)
-            # get is ok
-            response = self.anonymous_client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(response.data['followings']), 3)
-            # 确保按照时间倒序
-            ts0 = response.data['followings'][0]['created_at']
-            ts1 = response.data['followings'][1]['created_at']
-            ts2 = response.data['followings'][2]['created_at']
-            self.assertEqual(ts0 > ts1, True)
-            self.assertEqual(ts1 > ts2, True)
-            self.assertEqual(
-                response.data['followings'][0]['user']['username'],
-                'laopo_following2',
-            )
-            self.assertEqual(
-                response.data['followings'][1]['user']['username'],
-                'laopo_following1',
-            )
-            self.assertEqual(
-                response.data['followings'][2]['user']['username'],
-                'laopo_following0',
-            )
+    def test_followings(self):
+        url = FOLLOWINGS_URL.format(self.laopo.id)
+        # post is not allowed
+        response = self.ruize_client.post(url)
+        self.assertEqual(response.status_code, 405)
+        # get is ok
+        response = self.ruize_client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['followings']), 3)
+        # 确保按照时间倒序
+        ts0 = response.data['followings'][0]['created_at']
+        ts1 = response.data['followings'][1]['created_at']
+        ts2 = response.data['followings'][2]['created_at']
+        self.assertEqual(ts0 > ts1, True)
+        self.assertEqual(ts1 > ts2, True)
+        self.assertEqual(
+            response.data['followings'][0]['user']['username'],
+            'laopo_following2',
+        )
+        self.assertEqual(
+            response.data['followings'][1]['user']['username'],
+            'laopo_following1',
+        )
+        self.assertEqual(
+            response.data['followings'][2]['user']['username'],
+            'laopo_following0',
+        )
 
-        def test_followers(self):
-            url = FOLLOWERS_URL.format(self.laopo.id)
-            # post is not allowed
-            response = self.anonymous_client.post(url)
-            self.assertEqual(response.status_code, 405)
-            # get is ok
-            response = self.anonymous_client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(response.data['followers']), 2)
-            # 确保按照时间倒序
-            ts0 = response.data['followers'][0]['created_at']
-            ts1 = response.data['followers'][1]['created_at']
-            self.assertEqual(ts0 > ts1, True)
-            self.assertEqual(
-                response.data['followers'][0]['user']['username'],
-                'laopo_follower1',
-            )
-            self.assertEqual(
-                response.data['followers'][1]['user']['username'],
-                'laopo_follower0',
-            )
+    def test_followers(self):
+        url = FOLLOWERS_URL.format(self.laopo.id)
+        # post is not allowed
+        response = self.ruize_client.post(url)
+        self.assertEqual(response.status_code, 405)
+        # get is ok
+        response = self.ruize_client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['followers']), 2)
+        # 确保按照时间倒序
+        ts0 = response.data['followers'][0]['created_at']
+        ts1 = response.data['followers'][1]['created_at']
+        self.assertEqual(ts0 > ts1, True)
+        self.assertEqual(
+            response.data['followers'][0]['user']['username'],
+            'laopo_follower1',
+        )
+        self.assertEqual(
+            response.data['followers'][1]['user']['username'],
+            'laopo_follower0',
+        )
 

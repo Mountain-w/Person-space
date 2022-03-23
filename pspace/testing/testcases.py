@@ -6,6 +6,8 @@ from comments.models import Comment
 from newsfeeds.models import NewsFeed
 from likes.models import Like
 from django.contrib.contenttypes.models import ContentType
+from utils.auth.authhelper import generate_token
+
 
 class TestCase(DjangoTestCase):
     @property
@@ -45,7 +47,7 @@ class TestCase(DjangoTestCase):
     def create_user_and_client(self, *args, **kwargs):
         user = self.create_user(*args, **kwargs)
         client = APIClient()
-        client.force_authenticate(user)
+        client.credentials(HTTP_AUTHORIZATION=generate_token(user.username))
         return user, client
 
     def create_newsfeed(self, user, dynamic):

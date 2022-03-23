@@ -8,14 +8,11 @@ DYNAMIC_LIST_API = '/api/dynamics/'
 DYNAMIC_DETAIL_API = '/api/dynamics/{}/'
 NEWSFEED_LIST_API = '/api/newsfeeds/'
 
+
 class CommentApiTests(TestCase):
     def setUp(self):
-        self.ruize = self.create_user('ruize')
-        self.ruize_client = APIClient()
-        self.ruize_client.force_authenticate(self.ruize)
-        self.laopo = self.create_user('laopo')
-        self.laopo_client = APIClient()
-        self.laopo_client.force_authenticate(self.laopo)
+        self.ruize, self.ruize_client = self.create_user_and_client('ruize')
+        self.laopo, self.laopo_client = self.create_user_and_client('laopo')
         self.dynamic = self.create_dynamic(self.ruize)
 
     def test_create(self):
@@ -26,16 +23,16 @@ class CommentApiTests(TestCase):
         response = self.ruize_client.post(COMMENT_URL)
         self.assertEqual(response.status_code, 400)
         # 没有评论不行
-        response = self.ruize_client.post(COMMENT_URL, {'dynamic_id':self.dynamic.id})
+        response = self.ruize_client.post(COMMENT_URL, {'dynamic_id': self.dynamic.id})
         self.assertEqual(response.status_code, 400)
         # 没有动态不行
-        response = self.ruize_client.post(COMMENT_URL, {'content':'1'})
+        response = self.ruize_client.post(COMMENT_URL, {'content': '1'})
         self.assertEqual(response.status_code, 400)
         # 评论太长不行
         response = self.ruize_client.post(
             COMMENT_URL,
             {'dynamic_id': self.dynamic.id,
-             'content': '1'*145}
+             'content': '1' * 145}
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual('content' in response.data['errors'], True)
@@ -43,8 +40,8 @@ class CommentApiTests(TestCase):
         response = self.ruize_client.post(
             COMMENT_URL,
             {
-                'dynamic_id':self.dynamic.id,
-                'content':'oh yeah',
+                'dynamic_id': self.dynamic.id,
+                'content': 'oh yeah',
             }
         )
         self.assertEqual(response.status_code, 201)
@@ -65,7 +62,7 @@ class CommentApiTests(TestCase):
         count = Comment.objects.count()
         response = self.ruize_client.delete(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(count-1, Comment.objects.count())
+        self.assertEqual(count - 1, Comment.objects.count())
 
     def test_update(self):
         comment = self.create_comment(self.ruize, self.dynamic)
@@ -76,7 +73,7 @@ class CommentApiTests(TestCase):
         response = self.anonymous_client.put(url, {'content': 'new'})
         self.assertEqual(response.status_code, 403)
         # 非本人不可更新
-        response = self.laopo_client.put(url, {'content':'new'})
+        response = self.laopo_client.put(url, {'content': 'new'})
         self.assertEqual(response.status_code, 403)
         comment.refresh_from_db()
         self.assertNotEqual(comment.content, 'new')
@@ -85,9 +82,9 @@ class CommentApiTests(TestCase):
         before_created = comment.created_at
         now = timezone.now()
         response = self.ruize_client.put(url, {
-            'content':'new',
-            'user_id':self.laopo.id,
-            'dynamic_id':another_dynamic.id,
+            'content': 'new',
+            'user_id': self.laopo.id,
+            'dynamic_id': another_dynamic.id,
             'created_at': now,
         })
         self.assertEqual(response.status_code, 200)
@@ -116,7 +113,7 @@ class CommentApiTests(TestCase):
         response = self.anonymous_client.get(
             COMMENT_URL,
             {
-                'dynamic_id':self.dynamic.id
+                'dynamic_id': self.dynamic.id
             }
         )
         self.assertEqual(response.status_code, 200)
@@ -143,7 +140,7 @@ class CommentApiTests(TestCase):
         self.assertEqual(response.data['comments_count'], 0)
 
         self.create_comment(self.ruize, dynamic)
-        response = self.laopo_client.get(DYNAMIC_LIST_API, {'user_id':self.ruize.id})
+        response = self.laopo_client.get(DYNAMIC_LIST_API, {'user_id': self.ruize.id})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['Dynamics'][0]['comments_count'], 1)
 
@@ -153,4 +150,3 @@ class CommentApiTests(TestCase):
         response = self.laopo_client.get(NEWSFEED_LIST_API)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['newsfeeds'][0]['dynamic']['comments_count'], 2)
-

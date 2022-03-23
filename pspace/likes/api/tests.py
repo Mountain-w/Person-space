@@ -1,12 +1,11 @@
 from testing.testcases import TestCase
-
-
 LIKE_BASE_URL = '/api/likes/'
 LIKE_CANCEL_URL = '/api/likes/cancel/'
 COMMENT_LIST_API = '/api/comments/'
 DYNAMIC_LIST_API = '/api/dynamics/'
 DYNAMIC_DETAIL_API = '/api/dynamics/{}/'
 NEWSFEED_LIST_API = '/api/newsfeeds/'
+
 
 class LikeApiTest(TestCase):
     def setUp(self):
@@ -72,8 +71,8 @@ class LikeApiTest(TestCase):
     def test_cancel(self):
         dynamic = self.create_dynamic(self.ruize)
         comment = self.create_comment(self.laopo, dynamic)
-        like_comment_data = {'content_type': 'comment', 'object_id':comment.id}
-        like_dynamic_data = {'content_type':'dynamic', 'object_id':dynamic.id}
+        like_comment_data = {'content_type': 'comment', 'object_id': comment.id}
+        like_dynamic_data = {'content_type': 'dynamic', 'object_id': dynamic.id}
         self.ruize_client.post(LIKE_BASE_URL, like_dynamic_data)
         self.laopo_client.post(LIKE_BASE_URL, like_comment_data)
         # 需要登录
@@ -85,7 +84,7 @@ class LikeApiTest(TestCase):
         # 错误的参数
         response = self.laopo_client.post(LIKE_CANCEL_URL, {
             'content_type': 'wrong',
-            'object_id':1
+            'object_id': 1
         })
         self.assertEqual(response.status_code, 400)
         response = self.laopo_client.post(LIKE_CANCEL_URL, {
@@ -153,7 +152,7 @@ class LikeApiTest(TestCase):
         self.assertEqual(response.data['likes_count'], 1)
 
         response = self.laopo_client.get(DYNAMIC_LIST_API, {
-            'user_id' : self.ruize.id
+            'user_id': self.ruize.id
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['Dynamics'][0]['has_liked'], True)
