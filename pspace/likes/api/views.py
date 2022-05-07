@@ -29,7 +29,7 @@ class LikeViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         like = serializer.save()
-        return Response(LikeSerializer(like).data,status=status.HTTP_201_CREATED)
+        return Response(LikeSerializer(like, context={"request": request}).data,status=status.HTTP_201_CREATED)
 
     @action(methods=['POST'], detail=False)
     @required_params(request_attr='data', params=['content_type', 'object_id'])

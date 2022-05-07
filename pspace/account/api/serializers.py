@@ -1,14 +1,36 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers, exceptions
 from friendships.services import FriendshipService
+from account.models import UserProfile
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = UserProfile
+        fields = ('nickname', 'avatar', 'introduction')
+
+class UserProfileForUpdate(serializers.ModelSerializer):
+    nickname = serializers.CharField(max_length=100, min_length=2)
+    avatar = serializers.FileField()
+    introduction = serializers.CharField()
+
+    class Meta:
+        model = UserProfile
+        fields = ("nickname", "avatar", "introduction")
+    
+    def update(self, instance, validated_data):
+        instance.nickname = validated_data['nickname']
+        instance.avatar = validated_data['avatar']
+        instance.introduction = validated_data['introduction']
+        instance.save()
+        return instance
 
 class UserSerializer(serializers.ModelSerializer):
     has_followed = serializers.SerializerMethodField()
-
+    profile = UserProfileSerializer()
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'has_followed']
+        fields = ['id', 'username', 'email', 'has_followed', 'profile']
     
     def get_has_followed(self, obj):
         current_user = self.context['request'].user
@@ -49,3 +71,4 @@ class SignupSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
+

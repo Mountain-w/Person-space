@@ -9,7 +9,7 @@ from django.contrib.auth import (
     login as django_login,
     logout as django_logout,
 )
-from account.api.serializers import UserSerializer, SignupSerializer, LoginSerializer
+from account.api.serializers import UserSerializer, SignupSerializer, LoginSerializer, UserProfileSerializer, UserProfileForUpdate
 from utils.auth.authhelper import generate_token
 
 
@@ -80,3 +80,39 @@ class AccountViewSet(viewsets.ViewSet):
         if request.user.is_authenticated:
             data['user'] = UserSerializer(request.user, context={'request':request}).data
         return Response(data)
+
+
+class ProfileViewSet(viewsets.GenericViewSet):
+    serializer_class = UserProfileSerializer
+    queryset = User.objects.all().order_by('-date_joined')
+
+    def retrieve(self, request, pk, *args, **kwargs):
+        instance = self.get_object()
+        print(instance.profile.id)
+        return Response({
+            'profile': UserProfileSerializer(instance.profile).data,
+        }, status=200)
+
+    def update(self, request, pk, *args, **kwargs):
+        print(pk)
+        instance = self.get_object()
+        if instance != request.user:
+            return Response({
+                'message': "You can't update other's profile"
+            }, status=403)
+        serializer = UserProfileForUpdate(
+            instance=request.user.profile,
+            data={
+                "nickname": request.data.get('nickname'),
+                "introduction": request.data.get('introduction'),
+                "avatar": request.FILES.get('avatar')
+            }
+        )
+        if not serializer.is_valid():
+            return Response({
+                "message": "Please check your input",
+                "errors": serializer.errors,
+            }, status=400)
+        instance = serializer.save()
+        print(instance.avatar.url, instance.nickname)
+        return Response({"success": "ok"}, status=201)
