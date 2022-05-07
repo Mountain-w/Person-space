@@ -29,4 +29,12 @@ class FriendshipService:
         friendships = Friendship.objects.filter(
             to_user=user,
         ).prefetch_related('from_user')
-        return [friendship.from_user for friendship in friendships]
+        return [friendship.from_user for friendship in friendships if friendship.from_user is not None]
+    
+    @classmethod
+    def has_followed(cls, from_user, to_user):
+        if from_user.id == to_user.id:
+            return
+        friendships = Friendship.objects.filter(from_user=from_user)
+        following_ids = [friendship.to_user_id for friendship in friendships]
+        return to_user.id in following_ids

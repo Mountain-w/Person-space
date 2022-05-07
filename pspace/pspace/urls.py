@@ -31,9 +31,13 @@ router.register(r'api/newsfeeds', NewsFeedViewSet, basename="newsfeeds")
 router.register(r'api/comments', CommentViewSet, basename="comments")
 router.register(r'api/likes', LikeViewSet, basename='likes')
 
-
+from django.views.static import serve 
+from pspace.settings import MEDIA_ROOT
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
+from django.conf import settings
+from django.conf.urls.static import static
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

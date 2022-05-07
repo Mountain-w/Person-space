@@ -44,8 +44,9 @@ class DynamicViewset(viewsets.GenericViewSet,
         """
         重载 create 方法，因为需要默认用当前登录用户作为动态用户
         """
+        
         serializer = DynamicCreateSerializer(
-            data=request.data,
+            data={'content': request.data['content'], 'files': list(request.FILES.values())},
             context={"request":request},
         )
         if not serializer.is_valid():

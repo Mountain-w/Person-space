@@ -44,9 +44,10 @@ class AccountViewSet(viewsets.ViewSet):
                 "message": "username and password does match",
             }, status=400)
         # django_login(request, user)
+        request.user = user
         return Response({
             "success": True,
-            "user": UserSerializer(instance=user).data,
+            "user": UserSerializer(instance=user, context={'request':request}).data,
             "token": generate_token(user.username)
         })
 
@@ -66,9 +67,10 @@ class AccountViewSet(viewsets.ViewSet):
             }, status=400)
         user = serializer.save()
         # django_login(request, user)
+        request.user = user
         return Response({
             "success": True,
-            "user": UserSerializer(user).data,
+            "user": UserSerializer(user, context={'request':request}).data,
             "token": generate_token(user.username)
         }, status=201)
 
@@ -76,5 +78,5 @@ class AccountViewSet(viewsets.ViewSet):
     def login_status(self, request):
         data = {"has_logged_in": request.user.is_authenticated}
         if request.user.is_authenticated:
-            data['user'] = UserSerializer(request.user).data
+            data['user'] = UserSerializer(request.user, context={'request':request}).data
         return Response(data)

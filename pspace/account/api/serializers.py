@@ -1,11 +1,18 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers, exceptions
+from friendships.services import FriendshipService
 
 
 class UserSerializer(serializers.ModelSerializer):
+    has_followed = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email', 'has_followed']
+    
+    def get_has_followed(self, obj):
+        current_user = self.context['request'].user
+        return FriendshipService.has_followed(current_user, obj)
 
 class SignupSerializer(serializers.ModelSerializer):
     username = serializers.CharField(max_length=20, min_length=6)
